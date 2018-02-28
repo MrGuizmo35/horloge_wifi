@@ -116,11 +116,6 @@ void WS2812B_CONTROL_Initialize(void)
 {
     /* Place the App state machine in its initial state. */
     ws2812b_controlData.state = WS2812B_CONTROL_STATE_INIT;
-
-
-    /* TODO: Initialize your application's state machine and other
-     * parameters.
-     */
 }
 
 /******************************************************************************
@@ -141,27 +136,43 @@ void WS2812B_CONTROL_Tasks(void)
     case WS2812B_CONTROL_STATE_INIT:
     {
         int i;
-        ws2812b_controlData.update_timer = SYS_TMR_DelayMS(100);
-        ws2812b_controlData.state = WS2812B_CONTROL_STATE_SERVICE_TASKS;
+        ws2812b_controlData.update_timer = SYS_TMR_DelayMS(40);
+        ws2812b_controlData.state = WS2812B_CONTROL_STATE_READ_SPI;
+        ws2812b_controlData.spi_handle = DRV_SPI_Open(DRV_SPI_INDEX_0, DRV_IO_INTENT_READWRITE | DRV_IO_INTENT_EXCLUSIVE);
+        DRV_SPI_BufferAddRead2(ws2812b_controlData.spi_handle, ws2812b_controlData.spi_rx_buffer, 36, NULL, NULL, &ws2812b_controlData.rx_buffer_handle);
         for (i = 0; i < NB_LEDS; i++)
         {
-            ws2812b_controlData.led_colors[i].B = 255;
+            ws2812b_controlData.led_colors[i].B = 32;
             ws2812b_controlData.led_colors[i].R = 0;
-            ws2812b_controlData.led_colors[i].G = 0;
+            ws2812b_controlData.led_colors[i].G = 32;
         }
         break;
     }
-
+    case WS2812B_CONTROL_STATE_READ_SPI:
+    {
+        int i, j;
+        if (DRV_SPI_BufferStatus(ws2812b_controlData.rx_buffer_handle) == DRV_SPI_BUFFER_EVENT_COMPLETE)
+        {
+            for (i = 0, j = 0; i < 36; i += 3, j++)
+            {
+                ws2812b_controlData.led_colors[j].R = ws2812b_controlData.spi_rx_buffer[i];
+                ws2812b_controlData.led_colors[j].G = ws2812b_controlData.spi_rx_buffer[i + 1];
+                ws2812b_controlData.led_colors[j].B = ws2812b_controlData.spi_rx_buffer[i + 2];
+            }
+            DRV_SPI_BufferAddRead2(ws2812b_controlData.spi_handle, ws2812b_controlData.spi_rx_buffer, 36, NULL, NULL, &ws2812b_controlData.rx_buffer_handle);
+        }
+        ws2812b_controlData.state = WS2812B_CONTROL_STATE_SERVICE_TASKS;
+        break;
+    }
     case WS2812B_CONTROL_STATE_SERVICE_TASKS:
     {
         if (SYS_TMR_DelayStatusGet(ws2812b_controlData.update_timer) == true)
         {
             int i, j;
-
-            ws2812b_controlData.update_timer = SYS_TMR_DelayMS(33);
-            for(i = 0; i < NB_LEDS; i++)
+            ws2812b_controlData.update_timer = SYS_TMR_DelayMS(40);
+            for (i = 0; i < NB_LEDS; i++)
             {
-                for(j = 23; j >= 0; j--)
+                for (j = 23; j >= 0; j--)
                 {
                     LEDS_CONTROLOn();
                     Nop();
@@ -176,7 +187,7 @@ void WS2812B_CONTROL_Tasks(void)
                     Nop();
                     Nop();
                     Nop();
-                    if(ws2812b_controlData.led_colors[i].color & (1 << j))
+                    if (ws2812b_controlData.led_colors[i].color & (1 << j))
                     {
                         LEDS_CONTROLOn();
                     }
@@ -212,12 +223,9 @@ void WS2812B_CONTROL_Tasks(void)
                 }
             }
         }
+        ws2812b_controlData.state = WS2812B_CONTROL_STATE_READ_SPI;
         break;
     }
-
-        /* TODO: implement your application state machine.*/
-
-
         /* The default state should never be executed. */
     default:
     {

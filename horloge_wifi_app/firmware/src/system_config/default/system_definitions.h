@@ -60,6 +60,7 @@ SUBSTITUTE GOODS, TECHNOLOGY, SERVICES, OR ANY CLAIMS BY THIRD PARTIES
 #include "driver/tmr/drv_tmr.h"
 #include "driver/usart/drv_usart.h"
 #include "system/ports/sys_ports.h"
+#include "driver/spi/static/drv_spi_static.h"
 #include "system/msg/sys_msg.h"
 #include "heartbeat.h"
 #include "ws2812b_control.h"
@@ -105,6 +106,9 @@ typedef struct
     SYS_MODULE_OBJ  drvUsart1;
     SYS_MODULE_OBJ  sysMsg0;
     SYS_MODULE_OBJ  sysConsole0;
+
+    /*** SPI Object for Index 0 ***/
+    SYS_MODULE_OBJ				spiObjectIdx0;
 
 } SYSTEM_OBJECTS;
 

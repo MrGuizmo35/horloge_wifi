@@ -69,7 +69,7 @@ extern "C"
 // DOM-IGNORE-END 
 
 #define NB_LEDS 12
-    
+
 // *****************************************************************************
 // *****************************************************************************
 // Section: Type Definitions
@@ -92,20 +92,21 @@ typedef enum
 {
     /* Application's state machine's initial state. */
     WS2812B_CONTROL_STATE_INIT = 0,
+    WS2812B_CONTROL_STATE_READ_SPI,
     WS2812B_CONTROL_STATE_SERVICE_TASKS
 } WS2812B_CONTROL_STATES;
 
-
 typedef union
 {
+
     struct
     {
-        uint8_t B;  
+        uint8_t B;
         uint8_t R;
         uint8_t G;
     };
     uint32_t color;
-}RGB_COLOR;
+} RGB_COLOR;
 
 // *****************************************************************************
 
@@ -127,6 +128,9 @@ typedef struct
     WS2812B_CONTROL_STATES state;
     SYS_TMR_HANDLE update_timer;
     RGB_COLOR led_colors[NB_LEDS];
+    DRV_HANDLE spi_handle;
+    uint8_t spi_rx_buffer[256];
+    DRV_SPI_BUFFER_HANDLE rx_buffer_handle;
 } WS2812B_CONTROL_DATA;
 
 
